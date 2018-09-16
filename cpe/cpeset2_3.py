@@ -31,9 +31,9 @@ feedback about it, please contact:
 """
 
 from .cpe2_3 import CPE2_3
-from .cpe2_3_wfn import CPE2_3_WFN
+from .cpe2_3_fs import CPE2_3_FS
 from .comp.cpecomp import CPEComponent
-from .comp.cpecomp2_3_wfn import CPEComponent2_3_WFN
+from .comp.cpecomp2_3_fs import CPEComponent2_3_FS
 from .cpeset import CPESet
 
 
@@ -51,7 +51,7 @@ class CPESet2_3(CPESet):
     #  CONSTANTS  #
     ###############
 
-    # Possible set relations between a source WFN and a target WFN:
+    # Possible set relations between a source FS and a target FS:
     # - The source is a SUPERSET of the target
     # - The source is a SUBSET of the target
     # - The source and target are EQUAL
@@ -73,7 +73,7 @@ class CPESet2_3(CPESet):
     @classmethod
     def _compare(cls, source, target):
         """
-        Compares two values associated with a attribute of two WFNs,
+        Compares two values associated with a attribute of two FSs,
         which may be logical values (ANY or NA) or string values.
 
         :param string source: First attribute value
@@ -81,7 +81,7 @@ class CPESet2_3(CPESet):
         :returns: The attribute comparison relation.
         :rtype: int
 
-        This function is a support function for compare_WFNs.
+        This function is a support function for compare_FSs.
         """
 
         if (CPESet2_3._is_string(source)):
@@ -102,17 +102,17 @@ class CPESet2_3(CPESet):
             return CPESet2_3.LOGICAL_VALUE_EQUAL
 
         # If source attribute value is ANY, then the result is SUPERSET
-        if (source == CPEComponent2_3_WFN.VALUE_ANY):
+        if (source == CPEComponent2_3_FS.VALUE_ANY):
             return CPESet2_3.LOGICAL_VALUE_SUPERSET
 
         # If target attribute value is ANY, then the result is SUBSET
-        if (target == CPEComponent2_3_WFN.VALUE_ANY):
+        if (target == CPEComponent2_3_FS.VALUE_ANY):
             return CPESet2_3.LOGICAL_VALUE_SUBSET
 
         # If either source or target attribute value is NA
         # then the result is DISJOINT
-        isSourceNA = source == CPEComponent2_3_WFN.VALUE_NA
-        isTargetNA = target == CPEComponent2_3_WFN.VALUE_NA
+        isSourceNA = source == CPEComponent2_3_FS.VALUE_NA
+        isTargetNA = target == CPEComponent2_3_FS.VALUE_NA
 
         if (isSourceNA or isTargetNA):
             return CPESet2_3.LOGICAL_VALUE_DISJOINT
@@ -146,20 +146,20 @@ class CPESet2_3(CPESet):
         ends = 0
 
         # Reading of initial wildcard in source
-        if source.startswith(CPEComponent2_3_WFN.WILDCARD_MULTI):
+        if source.startswith(CPEComponent2_3_FS.WILDCARD_MULTI):
             # Source starts with "*"
             start = 1
             begins = -1
         else:
             while ((start < len(source)) and
-                   source.startswith(CPEComponent2_3_WFN.WILDCARD_ONE,
+                   source.startswith(CPEComponent2_3_FS.WILDCARD_ONE,
                                      start, start)):
                 # Source starts with one or more "?"
                 start += 1
                 begins += 1
 
         # Reading of final wildcard in source
-        if (source.endswith(CPEComponent2_3_WFN.WILDCARD_MULTI) and
+        if (source.endswith(CPEComponent2_3_FS.WILDCARD_MULTI) and
            CPESet2_3._is_even_wildcards(source, end - 1)):
 
             # Source ends in "*"
@@ -167,7 +167,7 @@ class CPESet2_3(CPESet):
             ends = -1
         else:
             while ((end > 0) and
-                   source.endswith(CPEComponent2_3_WFN.WILDCARD_ONE, end - 1, end) and
+                   source.endswith(CPEComponent2_3_FS.WILDCARD_ONE, end - 1, end) and
                    CPESet2_3._is_even_wildcards(source, end - 1)):
 
                 # Source ends in "?"
@@ -216,7 +216,8 @@ class CPESet2_3(CPESet):
 
         This function is a support function for _compare().
         """
-
+        if s == "*":
+            return False
         idx = s.find("*")
         if idx != -1:
             if idx == 0:
@@ -267,28 +268,28 @@ class CPESet2_3(CPESet):
         This function is a support function for _compare().
         """
 
-        isAny = arg == CPEComponent2_3_WFN.VALUE_ANY
-        isNa = arg == CPEComponent2_3_WFN.VALUE_NA
+        isAny = arg == CPEComponent2_3_FS.VALUE_ANY
+        isNa = arg == CPEComponent2_3_FS.VALUE_NA
 
         return not (isAny or isNa)
 
     @classmethod
-    def compare_wfns(cls, source, target):
+    def compare_fss(cls, source, target):
         """
-        Compares two WFNs and returns a generator of pairwise attribute-value
+        Compares two FSs and returns a generator of pairwise attribute-value
         comparison results. It provides full access to the individual
         comparison results to enable use-case specific implementations
         of novel name-comparison algorithms.
 
-        Compare each attribute of the Source WFN to the Target WFN:
+        Compare each attribute of the Source FS to the Target FS:
 
-        :param CPE2_3_WFN source: first WFN CPE Name
-        :param CPE2_3_WFN target: seconds WFN CPE Name
+        :param CPE2_3_FS source: first FS CPE Name
+        :param CPE2_3_FS target: seconds FS CPE Name
         :returns: generator of pairwise attribute comparison results
         :rtype: generator
         """
 
-        # Compare results using the get() function in WFN
+        # Compare results using the get() function in FS
         for att in CPEComponent.CPE_COMP_KEYS_EXTENDED:
             value_src = source.get_attribute_values(att)[0]
             if value_src.find('"') > -1:
@@ -305,11 +306,11 @@ class CPESet2_3(CPESet):
     @classmethod
     def cpe_disjoint(cls, source, target):
         """
-        Compares two WFNs and returns True if the set-theoretic relation
+        Compares two FSs and returns True if the set-theoretic relation
         between the names is DISJOINT.
 
-        :param CPE2_3_WFN source: first WFN CPE Name
-        :param CPE2_3_WFN target: seconds WFN CPE Name
+        :param CPE2_3_FS source: first FS CPE Name
+        :param CPE2_3_FS target: seconds FS CPE Name
         :returns: True if the set relation between source and target
             is DISJOINT, otherwise False.
         :rtype: boolean
@@ -317,7 +318,7 @@ class CPESet2_3(CPESet):
 
         # If any pairwise comparison returned DISJOINT  then
         # the overall name relationship is DISJOINT
-        for att, result in CPESet2_3.compare_wfns(source, target):
+        for att, result in CPESet2_3.compare_fss(source, target):
             isDisjoint = result == CPESet2_3.LOGICAL_VALUE_DISJOINT
             if isDisjoint:
                 return True
@@ -326,11 +327,11 @@ class CPESet2_3(CPESet):
     @classmethod
     def cpe_equal(cls, source, target):
         """
-        Compares two WFNs and returns True if the set-theoretic relation
+        Compares two FSs and returns True if the set-theoretic relation
         between the names is EQUAL.
 
-        :param CPE2_3_WFN source: first WFN CPE Name
-        :param CPE2_3_WFN target: seconds WFN CPE Name
+        :param CPE2_3_FS source: first FS CPE Name
+        :param CPE2_3_FS target: seconds FS CPE Name
         :returns: True if the set relation between source and target
             is EQUAL, otherwise False.
         :rtype: boolean
@@ -338,7 +339,7 @@ class CPESet2_3(CPESet):
 
         # If any pairwise comparison returned EQUAL then
         # the overall name relationship is EQUAL
-        for att, result in CPESet2_3.compare_wfns(source, target):
+        for att, result in CPESet2_3.compare_fss(source, target):
             isEqual = result == CPESet2_3.LOGICAL_VALUE_EQUAL
             if not isEqual:
                 return False
@@ -347,11 +348,11 @@ class CPESet2_3(CPESet):
     @classmethod
     def cpe_subset(cls, source, target):
         """
-        Compares two WFNs and returns True if the set-theoretic relation
+        Compares two FSs and returns True if the set-theoretic relation
         between the names is (non-proper) SUBSET.
 
-        :param CPE2_3_WFN source: first WFN CPE Name
-        :param CPE2_3_WFN target: seconds WFN CPE Name
+        :param CPE2_3_FS source: first FS CPE Name
+        :param CPE2_3_FS target: seconds FS CPE Name
         :returns: True if the set relation between source and target
             is SUBSET, otherwise False.
         :rtype: boolean
@@ -359,7 +360,7 @@ class CPESet2_3(CPESet):
 
         # If any pairwise comparison returned something other than SUBSET
         # or EQUAL, then SUBSET is False.
-        for att, result in CPESet2_3.compare_wfns(source, target):
+        for att, result in CPESet2_3.compare_fss(source, target):
             isSubset = result == CPESet2_3.LOGICAL_VALUE_SUBSET
             isEqual = result == CPESet2_3.LOGICAL_VALUE_EQUAL
             if (not isSubset) and (not isEqual):
@@ -369,11 +370,11 @@ class CPESet2_3(CPESet):
     @classmethod
     def cpe_superset(cls, source, target):
         """
-        Compares two WFNs and returns True if the set-theoretic relation
+        Compares two FSs and returns True if the set-theoretic relation
         between the names is (non-proper) SUPERSET.
 
-        :param CPE2_3_WFN source: first WFN CPE Name
-        :param CPE2_3_WFN target: seconds WFN CPE Name
+        :param CPE2_3_FS source: first FS CPE Name
+        :param CPE2_3_FS target: seconds FS CPE Name
         :returns: True if the set relation between source and target
             is SUPERSET, otherwise False.
         :rtype: boolean
@@ -381,7 +382,7 @@ class CPESet2_3(CPESet):
 
         # If any pairwise comparison returned something other than SUPERSET
         # or EQUAL, then SUPERSET is False.
-        for att, result in CPESet2_3.compare_wfns(source, target):
+        for att, result in CPESet2_3.compare_fss(source, target):
             isSuperset = result == CPESet2_3.LOGICAL_VALUE_SUPERSET
             isEqual = result == CPESet2_3.LOGICAL_VALUE_EQUAL
             if (not isSuperset) and (not isEqual):
@@ -396,8 +397,8 @@ class CPESet2_3(CPESet):
     def append(self, cpe):
         """
         Adds a CPE element to the set if not already.
-        Only WFN CPE Names are valid, so this function converts the input CPE
-        object of version 2.3 to WFN style.
+        Only fs CPE Names are valid, so this function converts the input CPE
+        object of version 2.3 to fs style.
 
         :param CPE cpe: CPE Name to store in set
         :returns: None
@@ -413,14 +414,14 @@ class CPESet2_3(CPESet):
             if cpe._str == k._str:
                 return None
 
-        if isinstance(cpe, CPE2_3_WFN):
+        if isinstance(cpe, CPE2_3_FS):
             self.K.append(cpe)
         else:
-            # Convert the CPE Name to WFN
-            wfn = CPE2_3_WFN(cpe.as_wfn())
-            self.K.append(wfn)
+            # Convert the CPE Name to FS
+            fs = CPE2_3_FS(cpe.as_fs())
+            self.K.append(fs)
 
-    def name_match(self, wfn):
+    def name_match(self, fs):
         """
         Accepts a set of CPE Names K and a candidate CPE Name X. It returns
         'True' if X matches any member of K, and 'False' otherwise.
@@ -432,7 +433,7 @@ class CPESet2_3(CPESet):
         """
 
         for N in self.K:
-            if CPESet2_3.cpe_superset(wfn, N):
+            if CPESet2_3.cpe_superset(fs, N):
                 return True
         return False
 
